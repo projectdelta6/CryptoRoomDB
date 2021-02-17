@@ -12,14 +12,12 @@ import java.util.stream.IntStream
  * String Wrapper class for the purpose of encrypting the value held within when writing into
  * the DB and decrypting when reading from the DB.
  */
-class CryptoString(
-    var value: String = ""
-) : Comparable<CryptoString>, CharSequence {
+class CryptoString(value: String? = null) : Comparable<CryptoString>, CharSequence {
 
     /**
      * Copy Constructor.
      */
-    constructor(value: CryptoString) : this(value.value)
+    constructor(value: CryptoString?) : this(value?.value)
 
     /**
      * Decryptor Constructor.
@@ -37,9 +35,14 @@ class CryptoString(
     )
 
     /**
+     * internal 'wrapped' [String] value.
+     */
+    var value: String = value ?: ""
+
+    /**
      * Returns the length of this character sequence.
      */
-    override val length: Int by value::length
+    override val length: Int by this.value::length
 
     /**
      * Sets the internal [String] value to match that of the provided [CryptoString].
