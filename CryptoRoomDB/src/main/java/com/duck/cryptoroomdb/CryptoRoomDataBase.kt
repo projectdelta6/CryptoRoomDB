@@ -21,7 +21,7 @@ abstract class CryptoRoomDatabase : RoomDatabase() {
     /**
      * This needs to be called as part of the initialisation of the CryptoRoomDatabase implementation class.
      */
-    protected fun <T : CryptoRoomDatabase> Builder<T>.setCryptoHelpers(
+    fun <T : CryptoRoomDatabase> Builder<T>.setCryptoHelpers(
         _encryptor: Encryptor,
         _decryptor: Decryptor
     )
