@@ -5,3 +5,6 @@
 /kotlinc.xml
 /migrations.xml
 /other.xml
+/AndroidProjectSystem.xml
+/appInsightsSettings.xml
+/runConfigurations.xml
