@@ -10,11 +10,11 @@ group = 'com.github.projectdelta6'
 
 android {
     namespace 'com.duck.cryptoroomdb'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         minSdkVersion 19
-        targetSdk 34
+        targetSdk 35
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
