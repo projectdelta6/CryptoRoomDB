@@ -19,6 +19,6 @@ and:
 
 ```gradle
 dependencies {
-    compile 'com.github.projectdelta6:CryptoRoomDB:{desired version, preferably matching the Room version you are using}'
+    implementation 'com.github.projectdelta6:CryptoRoomDB:{desired version, preferably matching the Room version you are using}'
 }
 ```
