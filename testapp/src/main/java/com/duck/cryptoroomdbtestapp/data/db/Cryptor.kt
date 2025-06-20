@@ -32,6 +32,9 @@ class Cryptor(context: Context) : Encryptor, Decryptor {
 
     override fun encrypt(plainValue: String): String {
         val data = encrypt(plainValue.toByteArray())
+        if (data == null) {
+            throw IllegalStateException("Encryption failed: Unable to encrypt the provided data.")
+        }
         val encryptedString = Base64.encodeToString(data, Base64.DEFAULT)
         return encryptedString
     }
