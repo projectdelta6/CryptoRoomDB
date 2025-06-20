@@ -22,6 +22,9 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
 
     val users: StateFlow<List<UserDisplayModel>> =
         combine(normalUsers, encryptedUsers) { normalUsers, encryptedUsers ->
+            // Create a map for quick lookup of encrypted secrets by user ID
+            val encryptedUserMap =
+                encryptedUsers.associateBy { it.id }.mapValues { it.value.encryptedSecret }
             normalUsers.map { user ->
                 UserDisplayModel(
                     id = user.id,
@@ -29,8 +32,7 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
                     email = user.email,
                     age = user.age,
                     decryptedSecret = user.secret.value,
-                    encryptedSecret = encryptedUsers.find { it.id == user.id }?.encryptedSecret
-                        ?: ""
+                    encryptedSecret = encryptedUserMap[user.id] ?: ""
                 )
             }
 
