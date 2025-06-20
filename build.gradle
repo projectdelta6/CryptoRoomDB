@@ -4,6 +4,7 @@ buildscript {
         kotlin_version = '2.1.21'
         dokkaVersion = '0.9.17'
         room_version = '2.7.2'
+        compose_bom = '2025.06.01'
     }
     repositories {
         google()
