@@ -74,6 +74,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.bundles.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     //Room
     implementation(libs.androidx.room.runtime)
