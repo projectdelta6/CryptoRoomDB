@@ -4,12 +4,12 @@ targetSdk = "36"
 baseRepoMinSdk = "21"
 # Gradle and Kotlin
 agp = "8.13.0"
-kotlin = "2.2.20"
-ksp = "2.2.20-2.0.4"
+kotlin = "2.2.21"
+ksp = "2.3.0"
 
 # Libraries
 room = "2.8.3"
-compose-bom = "2025.10.00"
+compose-bom = "2025.11.00"
 core-ktx = "1.17.0"
 lifecycle-runtime-ktx = "2.9.4"
 activity-compose = "1.11.0"
@@ -26,7 +26,6 @@ espresso-core = "3.7.0"
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
 
 # Room
-#Room
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
