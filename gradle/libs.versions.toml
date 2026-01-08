@@ -3,18 +3,18 @@ compileSdk = "36"
 targetSdk = "36"
 baseRepoMinSdk = "21"
 # Gradle and Kotlin
-agp = "8.13.1"
-kotlin = "2.2.21"
+agp = "8.13.2"
+kotlin = "2.3.0"
 ksp = "2.3.0"
 
 # Libraries
 room = "2.8.4"
-compose-bom = "2025.11.01"
+compose-bom = "2025.12.01"
 core-ktx = "1.17.0"
 lifecycle-runtime-ktx = "2.10.0"
-activity-compose = "1.12.0"
-flexiLoggerVersion = "1.36.2"
-prefshelperVersion = "1.5.3"
+activity-compose = "1.12.2"
+flexiLoggerVersion = "1.36.4"
+prefshelperVersion = "1.6.0"
 
 # Testing
 junit = "4.13.2"
