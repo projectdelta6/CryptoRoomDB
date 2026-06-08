@@ -1,7 +1,7 @@
 # CryptoRoomDB: Value Class Redesign
 
 **Purpose:** Simplify CryptoString from a wrapper class to a value class while maintaining type safety and Room compatibility.
-**Status:** Proposal — **reviewed 2026-06-08, revisions needed before proceeding (see §0)**
+**Status:** Proposal — **reviewed & spiked 2026-06-08; technically viable on Room 2.8.4 (see §0)**
 **Impact:** Breaking change for direct `CryptoString` construction; TypeConverter *usage* unchanged, but the converter's internals and the library's own test suite need rework.
 
 ---
@@ -13,30 +13,35 @@ coverage gate, CI, and an AGP 9 / Kotlin 2.4 / Room 2.8.4 upgrade. The core idea
 (value class) still stands, but the context has changed and there is one risk the
 original plan does not address.
 
-### 0.1 🔴 Critical risk to validate FIRST: Room may bypass the TypeConverter
+### 0.1 ✅ RESOLVED by spike: Room uses the converter, does NOT store plaintext
 
-Room **2.6+ natively supports `@JvmInline value class` columns by unwrapping them** to
-the underlying type. Because `CryptoString` would wrap a `String` and the DB column is
-already `String`, Room may map the field **directly to the column and never invoke
-`CryptoStringTypeConverter`** — storing the **plaintext** and silently defeating
-encryption. This is the whole point of the library, so it is a blocker until proven.
+The concern: Room **2.6+ natively supports `@JvmInline value class` columns by unwrapping
+them** to the underlying type. Because `CryptoString` would wrap a `String` and the column
+is already `String`, Room *might* map the field directly to the column and never invoke
+`CryptoStringTypeConverter` — storing **plaintext** and silently defeating encryption.
 
-Today the wrapper is a plain class, so Room *must* use the converter. As a value class,
-the converter-vs-native-unwrap precedence is unverified and version-dependent.
+**Spike result (2026-06-08):** Built a throwaway value class + non-null `@TypeConverter`
+(visible reversible transform) + `@Database` in the test sources and asserted on the **raw
+column**. With the converter registered, Room **invoked it and stored ciphertext** — the
+raw value was `ENC:<reversed>`, not the plaintext. So a `@TypeConverter` takes precedence
+over native unwrapping on **Room 2.8.4 / KSP 2.3.9**. **Not a blocker.**
 
-**De-risk before any redesign work** (cheap now — we have the harness the original plan
-lacked): port `CryptoStringRoundTripTest.storedValue_isEncryptedNotPlainText` to a
-value-class spike. That test reads the raw column and asserts it is ciphertext — it is
-the exact canary for plaintext leakage. If Room unwraps past the converter, the redesign
-is not viable without a different column type (e.g. wrap a distinct type, or store a
-`ByteArray`/tagged type the converter owns).
+> ⚠️ **New caveat the spike exposes — a safety regression.** That precedence only holds
+> *while the converter is registered*. With a value class, **omitting** `@TypeConverters`
+> makes Room fall back to native unwrapping and **silently store plaintext** — no error.
+> Today's *class*-based `CryptoString` instead produces a loud compile error if the
+> converter is missing ("cannot figure out how to save this field"). So the redesign trades
+> a fail-loud failure mode for a fail-silent one. Mitigate with a mandatory round-trip test
+> in consumer projects (assert the raw column is ciphertext), and call this out prominently
+> in the README. (Not spike-proven for the *missing*-converter case, but follows directly
+> from the unwrap behaviour — a 5-min confirmation if desired.)
 
-### 0.2 🟠 TypeConverter name mangling
+### 0.2 ✅ RESOLVED by spike: no name-mangling problem
 
-`@JvmInline value class` parameters produce JVM-mangled method names
-(`fromCryptoString-<hash>`). Room/KSP codegen must resolve these. Nullable params box
-(no mangling), so the plan's nullable signatures may sidestep it — but confirm the
-generated `_Impl` compiles. Part of the same spike as §0.1.
+The spike's converter used a **non-null** value-class parameter (`fromSpike(SpikeCryptoString)`),
+which is exactly the case that produces a mangled JVM name (`fromSpike-<hash>`). Room/KSP
+codegen resolved it and the generated `_Impl` compiled and ran. **Not an issue** on the
+current toolchain — the plan can use non-null converter signatures if desired.
 
 ### 0.3 🟠 The test suite must be MIGRATED, not written fresh
 
@@ -68,10 +73,16 @@ almost entirely inside the library's own unit tests (§0.3).
 
 ### 0.6 Revised recommendation
 
-Motivation has shifted: the wrapper is now small, 100%-covered, and bug-free, so this is
-no longer pain-driven — the real prize is **KMP-readiness + API simplicity**. Still worth
-doing, but gate it on the §0.1 spike. **Do not start the refactor until the value-class
-round-trip is proven to still encrypt.**
+The §0.1 spike clears the only blocker: the value-class redesign **is technically viable**
+on Room 2.8.4. Motivation has shifted, though — the wrapper is now small, 100%-covered, and
+bug-free, so this is no longer pain-driven; the real prize is **KMP-readiness + API
+simplicity**. Net: a sound, optional refactor. If/when it's picked up, the work is:
+
+1. Land the value class + extension functions + (non-null) converter.
+2. Migrate the unit suite (§0.3) and keep the 95% Kover gate green.
+3. Add a permanent ciphertext round-trip assertion and a README warning to defend against
+   the fail-silent missing-converter regression (§0.1 caveat).
+4. Decide the nullable-vs-empty semantics deliberately (§0.5).
 
 ---
 
@@ -573,3 +584,4 @@ class CryptoStringTypeConverterTest {
 |------|--------|
 | 2026-01-18 | Initial design document created |
 | 2026-06-08 | Reviewed against current codebase (tests, Kover gate, CI, AGP 9 / Room 2.8.4). Added §0: critical Room native value-class-unwrap risk (could bypass the converter and store plaintext), TypeConverter name-mangling caveat, test-suite migration scope, and minor staleness fixes. Recommend a round-trip spike before proceeding. |
+| 2026-06-08 | Ran the §0.1/§0.2 spike (throwaway value class + converter + @Database in test sources). Result: Room 2.8.4 invokes the @TypeConverter and stores ciphertext (no plaintext leak); non-null value-class converter signature compiled fine (no mangling issue). Redesign marked technically viable. Exposed a new fail-silent caveat: omitting the converter would store plaintext rather than erroring. |
