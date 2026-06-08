@@ -4,7 +4,7 @@ CryptoRoomDB is an Android library that extends Room to provide field-level encr
 decryption for your database entities. It allows you to store sensitive data securely in your SQLite
 database, with minimal changes to your existing Room setup.
 
-[![](https://jitpack.io/v/projectdelta6/CryptoRoomDB.svg)](https://jitpack.io/#projectdelta6/CryptoRoomDB)
+[![Release](https://jitpack.io/v/projectdelta6/CryptoRoomDB.svg)](https://jitpack.io/#projectdelta6/CryptoRoomDB)
 
 ## Features
 
@@ -138,4 +138,4 @@ A sample app is included in the `testapp/` module. It demonstrates:
 
 ## License
 
-MIT
+This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
