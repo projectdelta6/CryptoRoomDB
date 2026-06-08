@@ -34,7 +34,7 @@ Add the following to your app/module `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.projectdelta6:CryptoRoomDB:{version}' // Use a version matching your Room version
+    implementation 'com.github.projectdelta6:CryptoRoomDB:{version}' // version is <room>.<revision>, e.g. 2.8.4.1
 }
 ```
 
@@ -107,10 +107,12 @@ itself hold the encrypted value in your app code.**
 > `@TypeConverters(CryptoStringTypeConverter::class)` on your `@Database`, the build fails rather
 > than silently storing plaintext.
 
-> **Migrating from earlier versions:** `CryptoString` is now a value class. The old
-> `CharSequence` behaviour, in-place mutation (`cryptoString.value = …` / `setValue`), the extra
-> constructors (`CryptoString()`, copy, and decryptor constructors), the `+` operator, and
-> `cryptoString == "plainString"` have been removed. Use `.value` (e.g.
+> **⚠️ Migrating to `2.8.4.1` — this is a breaking release.** The version only ticks from `2.8.4`
+> to `2.8.4.1` because it tracks the targeted Room version (the `.1` is the library revision), so
+> the API break is *not* obvious from the number — read this before upgrading. `CryptoString` is now
+> a value class: the old `CharSequence` behaviour, in-place mutation (`cryptoString.value = …` /
+> `setValue`), the extra constructors (`CryptoString()`, copy, and decryptor constructors), the `+`
+> operator, and `cryptoString == "plainString"` have been removed. Use `.value` (e.g.
 > `cryptoString.value == "plainString"`), `String.toCryptoString()`, `copy(secret = CryptoString(…))`
 > on your entity, or the new extension helpers. Entity fields and the `setCryptoHelpers(...)` setup
 > are unchanged.
