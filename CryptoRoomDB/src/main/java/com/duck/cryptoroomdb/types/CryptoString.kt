@@ -42,7 +42,8 @@ class CryptoString(value: String? = null) : Comparable<CryptoString>, CharSequen
     /**
      * Returns the length of this character sequence.
      */
-    override val length: Int by this.value::length
+    override val length: Int
+        get() = value.length
 
     /**
      * Sets the internal [String] value to match that of the provided [CryptoString].
