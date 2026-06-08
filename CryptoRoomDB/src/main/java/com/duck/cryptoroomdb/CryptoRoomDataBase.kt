@@ -11,9 +11,9 @@ import com.duck.cryptoroomdb.typeconverter.CryptoStringTypeConverter
 /**
  * Created by Bradley Duck on 2018/10/19.
  *
- * Wrapper class for [RoomDatabase] with Added DataEncryption through the use of the
- * [CryptoString][com.duck.cryptoroomdb.types.CryptoString] object in your [Entity](s) and
- * including the [CryptoStringTypeConverter] in your [TypeConverters]
+ * Wrapper class for [RoomDatabase] with added field-level encryption through the use of the
+ * [CryptoString][com.duck.cryptoroomdb.types.CryptoString] value class in your [Entity](s) and
+ * including the [CryptoStringTypeConverter] in your [TypeConverters].
  */
 @TypeConverters(value = [CryptoStringTypeConverter::class])
 abstract class CryptoRoomDatabase : RoomDatabase() {
