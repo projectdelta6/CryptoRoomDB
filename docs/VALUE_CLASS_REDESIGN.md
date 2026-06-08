@@ -31,10 +31,9 @@ over native unwrapping on **Room 2.8.4 / KSP 2.3.9**. **Not a blocker.**
 > makes Room fall back to native unwrapping and **silently store plaintext** — no error.
 > Today's *class*-based `CryptoString` instead produces a loud compile error if the
 > converter is missing ("cannot figure out how to save this field"). So the redesign trades
-> a fail-loud failure mode for a fail-silent one. Mitigate with a mandatory round-trip test
-> in consumer projects (assert the raw column is ciphertext), and call this out prominently
-> in the README. (Not spike-proven for the *missing*-converter case, but follows directly
-> from the unwrap behaviour — a 5-min confirmation if desired.)
+> a fail-loud failure mode for a fail-silent one. **This is now confirmed by spike and fully
+> mitigated — see §0.7:** giving the value class a `private` backing property makes Room
+> refuse to auto-unwrap, so a missing converter is a compile error again.
 
 ### 0.2 ✅ RESOLVED by spike: no name-mangling problem
 
@@ -80,46 +79,59 @@ simplicity**. Net: a sound, optional refactor. If/when it's picked up, the work 
 
 1. Land the value class + extension functions + (non-null) converter.
 2. Migrate the unit suite (§0.3) and keep the 95% Kover gate green.
-3. Defend against the fail-silent missing-converter regression — ideally by **not using a
-   value class at all** (§0.7), or failing that a ciphertext round-trip assertion + README
-   warning.
+3. Use the **private-backing-property value class** (§0.7) so a forgotten converter is a
+   compile error; keep a ciphertext round-trip test as belt-and-braces.
 4. Decide the nullable-vs-empty semantics deliberately (§0.5).
 
-### 0.7 Making "forgot the converter" fail loudly
+Note `§2.1`'s proposed `value class CryptoString(val value: String)` should become
+`value class CryptoString(private val raw: String) { val value get() = raw }` per §0.7.
 
-The fail-silent footgun (§0.1 caveat) is caused specifically by the `@JvmInline value class`
-wrapping `String`: Room auto-unwraps it to a TEXT column, so a missing converter stores
-plaintext with no error. Options, best first:
+### 0.7 ✅ SOLVED by spike: a private backing property makes it fail loud
 
-1. **Don't use a value class — use a plain immutable class.** The redesign's two real goals
-   (simpler API, KMP-readiness) come from dropping the `CharSequence` / `IntStream` /
-   mutable-`value` / multi-constructor cruft — **not** from the `value class` keyword. A plain
-   class delivers both, and Room *cannot* persist it natively, so a missing converter is a
-   **compile error** ("cannot figure out how to save this field") — exactly like today. Cost:
-   one small allocation per field, negligible beside the disk I/O + AES already happening. For
-   a security library, guaranteeing you can't silently store plaintext is worth that. This is
-   the recommended trade.
-   ```kotlin
-   class CryptoString(val value: String) {
-       override fun toString() = value
-       override fun equals(other: Any?) = other is CryptoString && other.value == value
-       override fun hashCode() = value.hashCode()
-       companion object { val EMPTY = CryptoString("") }
-   }
-   ```
-2. **Value class + custom Lint rule** shipped with the library: error when an `@Entity` has a
-   `CryptoString` field whose `@Database` doesn't register `CryptoStringTypeConverter`. Keeps
-   zero-overhead and restores build-time fail-loud — but real implementation effort, and lint
-   is finicky for cross-class Room config.
-3. **Mandatory consumer round-trip test** asserting the raw column is ciphertext — cheap, but
-   runtime, and relies on consumer discipline.
-4. **Value class wrapping a non-Room-persistable underlying type** to force a converter —
-   defeats the "it's just a String" ergonomics; not recommended.
+The fail-silent footgun (§0.1 caveat) is caused by the `@JvmInline value class` wrapping a
+*publicly visible* `String`: Room auto-unwraps it to a TEXT column, so a missing converter
+stores plaintext with no error.
 
-Net: zero-allocation isn't a meaningful requirement for an encrypted DB field, so the
-plain-class option (1) dissolves the footgun for free while keeping most of the redesign's
-value. Reserve the value class for if a profiler ever says these allocations matter — and then
-pair it with the Lint rule (2).
+**Spike finding (2026-06-08): making the underlying property `private` defeats Room's native
+unwrapping** — KSP then can't persist the field, so a missing `@TypeConverter` is a **compile
+error**, while the class stays a zero-allocation value class with a normal String API. This is
+the recommended shape:
+
+```kotlin
+@JvmInline
+value class CryptoString(private val raw: String) {
+    val value: String get() = raw
+    companion object { val EMPTY = CryptoString("") }
+}
+```
+- `CryptoString("secret")` and `.value` both work (public constructor + public getter).
+- **Zero runtime overhead** — still inlines to `String`; the converter's non-null parameter
+  stays unboxed. Only the *KSP-visible* property is private, which is enough for Room to
+  decline auto-unwrapping.
+- **Fail-loud** — forget `@TypeConverters(CryptoStringTypeConverter::class)` and KSP errors with
+  *"Cannot figure out how to save this property into database"*, exactly like today's class.
+- Proven to round-trip and store **ciphertext** when a converter *is* registered.
+
+Spike matrix (Room 2.8.4 / KSP 2.3.9; no converter unless noted):
+
+| Variant | Backing property | Converter | Result |
+|---|---|---|---|
+| A | `public val` | none | compiles → **fail-silent (plaintext)** ⚠️ |
+| B | `private val` + private ctor | none | compile error → **fail-loud** ✅ |
+| B + converter | `private val` | yes | compiles, round-trips, **stores ciphertext** ✅ |
+| D | `private val` + public ctor | none | compile error → **fail-loud** ✅ |
+
+Constructor visibility is irrelevant — the **private property** is the switch. Variant D is the
+recommended form (cleanest API).
+
+Options now superseded by the above:
+- *Plain (non-value) class* — also fail-loud, but gives up zero-allocation for no gain over the
+  private-property value class.
+- *Custom Lint rule* — unnecessary; the compiler enforces it directly.
+- *Wrapping a non-persistable type* — hacky; the private property achieves the same, cleanly.
+
+This removes the only real objection to the redesign: we get value-class simplicity **and**
+zero-overhead **and** the compile-time guarantee that you can't silently persist plaintext.
 
 ---
 
@@ -622,3 +634,4 @@ class CryptoStringTypeConverterTest {
 | 2026-01-18 | Initial design document created |
 | 2026-06-08 | Reviewed against current codebase (tests, Kover gate, CI, AGP 9 / Room 2.8.4). Added §0: critical Room native value-class-unwrap risk (could bypass the converter and store plaintext), TypeConverter name-mangling caveat, test-suite migration scope, and minor staleness fixes. Recommend a round-trip spike before proceeding. |
 | 2026-06-08 | Ran the §0.1/§0.2 spike (throwaway value class + converter + @Database in test sources). Result: Room 2.8.4 invokes the @TypeConverter and stores ciphertext (no plaintext leak); non-null value-class converter signature compiled fine (no mangling issue). Redesign marked technically viable. Exposed a new fail-silent caveat: omitting the converter would store plaintext rather than erroring. |
+| 2026-06-08 | Spiked the fail-silent caveat (§0.7, four variants). Solved: a `private` backing property makes Room decline native unwrapping, so a missing converter is a compile error — while keeping zero-overhead + a String API. Recommended shape is now `value class CryptoString(private val raw: String) { val value get() = raw }`. This removes the last objection to the redesign. |
