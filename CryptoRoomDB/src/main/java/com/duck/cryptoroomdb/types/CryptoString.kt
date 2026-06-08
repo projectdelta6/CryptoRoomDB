@@ -1,99 +1,31 @@
 package com.duck.cryptoroomdb.types
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import com.duck.cryptoroomdb.interfaces.Decryptor
-import com.duck.cryptoroomdb.interfaces.Encryptor
-import java.util.stream.IntStream
-
 /**
- * Created by Bradley Duck on 2018/10/19.
+ * Type-safe wrapper for strings that should be encrypted when stored in the database.
  *
- * String Wrapper class for the purpose of encrypting the value held within when writing into
- * the DB and decrypting when reading from the DB.
+ * This is a [value class][JvmInline] — compile-time type safety with zero runtime overhead;
+ * at runtime it is just the wrapped `String`.
+ *
+ * **Why the backing property is `private`:** Room natively unwraps a value class that exposes a
+ * persistable underlying type, which would map this straight to a `TEXT` column and **bypass
+ * [CryptoStringTypeConverter][com.duck.cryptoroomdb.typeconverter.CryptoStringTypeConverter],
+ * silently storing plaintext.** Hiding the backing property stops that: Room can no longer
+ * persist the field on its own, so it *requires* the converter and fails to compile without it.
+ * Read the plain value via [value]; construct with `CryptoString("...")`.
+ *
+ * The actual encryption/decryption happens in
+ * [CryptoStringTypeConverter][com.duck.cryptoroomdb.typeconverter.CryptoStringTypeConverter].
  */
-class CryptoString(value: String? = null) : Comparable<CryptoString>, CharSequence {
+@JvmInline
+value class CryptoString(private val raw: String) {
 
-    /**
-     * Copy Constructor.
-     */
-    constructor(value: CryptoString?) : this(value?.value)
-
-    /**
-     * Decryptor Constructor.
-     *
-     * This will decrypt the [encryptedValue] using the [decryptor] and initialise a
-     * new [CryptoString] with the decrypted value
-     *
-     * @param encryptedValue the encrypted [String] to be decrypted.
-     * @param decryptor the [Decryptor] to be used to decrypt the [encryptedValue].
-     */
-    constructor(encryptedValue: String, decryptor: Decryptor) : this(
-        decryptor.decrypt(
-            encryptedValue
-        )
-    )
-
-    /**
-     * internal 'wrapped' [String] value.
-     */
-    var value: String = value ?: ""
-
-    /**
-     * Returns the length of this character sequence.
-     */
-    override val length: Int
-        get() = value.length
-
-    /**
-     * Sets the internal [String] value to match that of the provided [CryptoString].
-     *
-     * @param value [CryptoString] the value to be set.
-     */
-    fun setValue(value: CryptoString) {
-        this.value = value.value
-    }
-
-    /**
-     * Returns a string obtained by concatenating this string with the string representation of the given [other] object.
-     */
-    operator fun plus(other: Any?): String = value.plus(other)
-
-    override operator fun get(index: Int): Char = value[index]
-
-    override fun subSequence(startIndex: Int, endIndex: Int): CharSequence =
-        value.subSequence(startIndex, endIndex)
-
-    override fun equals(other: Any?): Boolean {
-        if (other is CryptoString) {
-            return value == other.value
-        }
-        return if (other is String) {
-            value == other
-        } else super.equals(other)
-    }
-
-    fun equals(other: String?): Boolean {
-        return value == other
-    }
-
-    override operator fun compareTo(other: CryptoString): Int = compareTo(other.value)
-
-    operator fun compareTo(other: String): Int = value.compareTo(other)
-
-    override fun hashCode(): Int = value.hashCode()
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    override fun chars(): IntStream = value.chars()
+    /** The plain (decrypted) value held by this wrapper. */
+    val value: String get() = raw
 
     override fun toString(): String = value
 
-    @RequiresApi(Build.VERSION_CODES.N)
-    override fun codePoints(): IntStream = value.codePoints()
-
-    /**
-     * @param encryptor [Encryptor] to do the actual encryption.
-     * @return The **encrypted** value of this CryptoString.
-     */
-    fun encrypt(encryptor: Encryptor): String = encryptor.encrypt(value)
+    companion object {
+        /** A [CryptoString] wrapping the empty string. */
+        val EMPTY = CryptoString("")
+    }
 }

@@ -34,7 +34,7 @@ Add the following to your app/module `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.projectdelta6:CryptoRoomDB:{version}' // Use a version matching your Room version
+    implementation 'com.github.projectdelta6:CryptoRoomDB:{version}' // version is <room>.<revision>, e.g. 2.8.4.1
 }
 ```
 
@@ -78,27 +78,44 @@ data class UserEntity(
 
 ## CryptoString Type
 
-The `CryptoString` type is a drop-in String wrapper designed for seamless encryption and decryption
-with Room. **It only ever holds the decrypted (plain) string value in your app code.** The value is
-only encrypted when it is written to the database table, and decrypted automatically when read back.
+The `CryptoString` type is a `@JvmInline value class` wrapping a `String`. **It only ever holds the
+decrypted (plain) value in your app code** — the value is encrypted only when written to the
+database and decrypted automatically when read back. Being a value class, it adds no runtime
+overhead (at runtime it is just the `String`) and is immutable.
 
-You can use `CryptoString` in your entities just like a regular String. It implements `CharSequence`
-and common operators, so it behaves like a String in most app code:
+Access the plain value via `.value`; `toString()` returns it too:
 
 ```kotlin
 val secret = CryptoString("mySecret")
-val plain: String = secret.value // Access the decrypted value
-println(secret) // Prints the decrypted value
+val plain: String = secret.value   // the decrypted value
+println(secret)                    // prints: mySecret
 
-// Use in comparisons and concatenation
-if (secret == "mySecret") { /* ... */
-}
-val combined = secret + "123"
+// Immutable, with value-based equality:
+if (secret == CryptoString("mySecret")) { /* ... */ }   // true
+if (secret.value == "mySecret") { /* ... */ }           // compare against a plain String
 ```
 
+Helper extension functions live alongside it: `String.toCryptoString()`, `contentEquals(String)`,
+`length`, `isEmpty`/`isNotEmpty`/`isBlank`/`isNotBlank`, and `compareTo`.
+
 When used with CryptoRoomDB and the provided TypeConverter, values are automatically encrypted when
-written to the database and decrypted when read. **At no point does the CryptoString instance itself
-hold the encrypted value in your app code.**
+written to the database and decrypted when read. **At no point does the `CryptoString` instance
+itself hold the encrypted value in your app code.**
+
+> **Registering `CryptoStringTypeConverter` is mandatory.** `CryptoString` deliberately hides its
+> backing value, so Room cannot persist the field on its own — if you forget
+> `@TypeConverters(CryptoStringTypeConverter::class)` on your `@Database`, the build fails rather
+> than silently storing plaintext.
+
+> **⚠️ Migrating to `2.8.4.1` — this is a breaking release.** The version only ticks from `2.8.4`
+> to `2.8.4.1` because it tracks the targeted Room version (the `.1` is the library revision), so
+> the API break is *not* obvious from the number — read this before upgrading. `CryptoString` is now
+> a value class: the old `CharSequence` behaviour, in-place mutation (`cryptoString.value = …` /
+> `setValue`), the extra constructors (`CryptoString()`, copy, and decryptor constructors), the `+`
+> operator, and `cryptoString == "plainString"` have been removed. Use `.value` (e.g.
+> `cryptoString.value == "plainString"`), `String.toCryptoString()`, `copy(secret = CryptoString(…))`
+> on your entity, or the new extension helpers. Entity fields and the `setCryptoHelpers(...)` setup
+> are unchanged.
 
 ## Usage Example
 

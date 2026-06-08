@@ -12,10 +12,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Exercises every branch of [CryptoStringTypeConverter] in isolation. The converter reaches the
- * crypto helpers through [CryptoRoomDatabase]'s static state, which we populate directly so no
- * database instance is required. Robolectric is used only so loading [CryptoRoomDatabase]
- * (a [androidx.room.RoomDatabase] subclass) is safe on the JVM.
+ * Exercises [CryptoStringTypeConverter]. The converter reaches the crypto helpers through
+ * [CryptoRoomDatabase]'s static state, which we populate directly so no database instance is
+ * required. Robolectric is used only so loading [CryptoRoomDatabase] (a
+ * [androidx.room.RoomDatabase] subclass) is safe on the JVM.
  */
 @RunWith(AndroidJUnit4::class)
 class CryptoStringTypeConverterTest {
@@ -34,23 +34,19 @@ class CryptoStringTypeConverterTest {
     }
 
     @Test
-    fun encrypt_nonNull_usesEncryptor() {
-        assertEquals(cryptor.encrypt("hello"), converter.encrypt(CryptoString("hello")))
+    fun fromCryptoString_encrypts() {
+        assertEquals(cryptor.encrypt("hello"), converter.fromCryptoString(CryptoString("hello")))
     }
 
     @Test
-    fun encrypt_null_encryptsEmptyString() {
-        assertEquals(cryptor.encrypt(""), converter.encrypt(null))
+    fun toCryptoString_decrypts() {
+        assertEquals("world", converter.toCryptoString(cryptor.encrypt("world")).value)
     }
 
     @Test
-    fun decrypt_nonNull_usesDecryptor() {
-        val stored = cryptor.encrypt("world")
-        assertEquals("world", converter.decrypt(stored).value)
-    }
-
-    @Test
-    fun decrypt_null_yieldsEmptyCryptoString() {
-        assertEquals("", converter.decrypt(null).value)
+    fun roundTrip_returnsOriginal() {
+        val original = CryptoString("secret")
+        val restored = converter.toCryptoString(converter.fromCryptoString(original))
+        assertEquals(original, restored)
     }
 }

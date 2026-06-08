@@ -18,7 +18,7 @@ configure<ApplicationExtension> {
         minSdk = 27
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = libs.versions.room.get()
+        versionName = "${libs.versions.room.get()}.${libs.versions.roomLibRevision.get()}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

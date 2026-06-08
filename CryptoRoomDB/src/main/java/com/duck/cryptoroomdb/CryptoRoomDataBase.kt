@@ -1,21 +1,27 @@
 package com.duck.cryptoroomdb
 
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import com.duck.cryptoroomdb.exceptions.DecryptorNotInitializedException
 import com.duck.cryptoroomdb.exceptions.EncryptorNotInitializedException
 import com.duck.cryptoroomdb.interfaces.Decryptor
 import com.duck.cryptoroomdb.interfaces.Encryptor
-import com.duck.cryptoroomdb.typeconverter.CryptoStringTypeConverter
 
 /**
- * Created by Bradley Duck on 2018/10/19.
+ * Base class for [RoomDatabase]s with field-level encryption.
  *
- * Wrapper class for [RoomDatabase] with Added DataEncryption through the use of the
- * [CryptoString][com.duck.cryptoroomdb.types.CryptoString] object in your [Entity](s) and
- * including the [CryptoStringTypeConverter] in your [TypeConverters]
+ * Store sensitive fields as [CryptoString][com.duck.cryptoroomdb.types.CryptoString] in your
+ * `@Entity`s; they are encrypted on write and decrypted on read by
+ * [CryptoStringTypeConverter][com.duck.cryptoroomdb.typeconverter.CryptoStringTypeConverter].
+ *
+ * To use it:
+ * 1. Extend this class for your `@Database`.
+ * 2. Register the converter on **your** `@Database` with
+ *    `@TypeConverters(CryptoStringTypeConverter::class)`. Room does **not** inherit
+ *    `@TypeConverters` from a superclass, so declaring it here would do nothing — it must be on
+ *    your own `@Database` (and a [CryptoString][com.duck.cryptoroomdb.types.CryptoString] field
+ *    won't compile without it).
+ * 3. Call [setCryptoHelpers] during initialisation, before any database access.
  */
-@TypeConverters(value = [CryptoStringTypeConverter::class])
 abstract class CryptoRoomDatabase : RoomDatabase() {
 
     /**
@@ -31,20 +37,10 @@ abstract class CryptoRoomDatabase : RoomDatabase() {
         private var encryptor: Encryptor? = null
         private var decryptor: Decryptor? = null
 
-        @Throws(EncryptorNotInitializedException::class)
-        fun getEncryptor(): Encryptor {
-            if (encryptor == null) {
-                throw EncryptorNotInitializedException()
-            }
-            return encryptor as Encryptor
-        }
+        internal fun getEncryptor(): Encryptor =
+            encryptor ?: throw EncryptorNotInitializedException()
 
-        @Throws(DecryptorNotInitializedException::class)
-        fun getDecryptor(): Decryptor {
-            if (decryptor == null) {
-                throw DecryptorNotInitializedException()
-            }
-            return decryptor as Decryptor
-        }
+        internal fun getDecryptor(): Decryptor =
+            decryptor ?: throw DecryptorNotInitializedException()
     }
 }

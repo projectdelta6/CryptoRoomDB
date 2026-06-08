@@ -35,8 +35,8 @@ Package: `com.duck.cryptoroomdb`
 
 Core components:
 - **`CryptoRoomDatabase`** - Abstract base class extending `RoomDatabase`. Manages static `Encryptor`/`Decryptor` instances via `setCryptoHelpers()`. Consumer databases extend this class.
-- **`CryptoString`** - String wrapper implementing `CharSequence`. Holds decrypted values in app code; encryption only happens during DB write via TypeConverter.
-- **`CryptoStringTypeConverter`** - Room TypeConverter that encrypts on write (`CryptoString` -> `String`) and decrypts on read (`String` -> `CryptoString`).
+- **`CryptoString`** - `@JvmInline value class` wrapping a **private** `String` (read via `.value`). Holds decrypted values in app code; encryption only happens during DB write via TypeConverter. The backing property is private on purpose: it stops Room from natively unwrapping the value class to a TEXT column (which would bypass the converter and store plaintext), so the converter is mandatory and its absence is a compile error. Utility operations (`encrypt`, `toCryptoString`, `length`, `isEmpty`, `compareTo`, etc.) are extension functions in `CryptoStringExtensions.kt`.
+- **`CryptoStringTypeConverter`** - Room TypeConverter that encrypts on write (`fromCryptoString`: `CryptoString` -> `String`) and decrypts on read (`toCryptoString`: `String` -> `CryptoString`).
 - **`Encryptor`/`Decryptor`** interfaces - Consumer implements these with their encryption logic. Often a single class implements both.
 
 ### Test App Module (`testapp/`)
@@ -69,6 +69,10 @@ data class UserEntity(
 
 ## Version Management
 
-- Library version matches Room version (see `libs.versions.toml`)
-- JitPack publishing configured in `CryptoRoomDB/build.gradle.kts`
-- Test app versionName also uses Room version for consistency
+- Library version is `<room>.<roomLibRevision>` — the targeted Room version plus an independent
+  library-release revision (e.g. `2.8.4.1`). Both are in `libs.versions.toml`. Bump
+  `roomLibRevision` for library-only releases; reset it to `1` when `room` is bumped. (A 4th
+  numeric segment is used, not a `-N` suffix, so versions sort *after* the bare Room version.)
+- JitPack publishing configured in `CryptoRoomDB/build.gradle.kts`; a release is a git tag matching
+  the version (e.g. `2.8.4.1`).
+- Test app versionName uses the same `<room>.<roomLibRevision>` string for consistency.

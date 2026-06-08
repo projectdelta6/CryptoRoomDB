@@ -3,30 +3,24 @@ package com.duck.cryptoroomdb.typeconverter
 import androidx.room.TypeConverter
 import com.duck.cryptoroomdb.CryptoRoomDatabase
 import com.duck.cryptoroomdb.types.CryptoString
+import com.duck.cryptoroomdb.types.decryptToCryptoString
+import com.duck.cryptoroomdb.types.encrypt
 
 /**
- * Created by Bradley Duck on 2018/10/19.
+ * Room [TypeConverter] for [CryptoString]. This is where the actual encryption happens:
+ * * writing to the DB encrypts the plain value;
+ * * reading from the DB decrypts the stored value.
  *
- * [TypeConverter][androidx.room.TypeConverter] for the [CryptoString] object.<br></br>
- * This is where the actual encryption and decryption happens:<br></br>
- * * The value is encrypted when writing into the DB.<br></br>
- * * The value is decrypted when read out of the DB.
+ * Registering this converter is mandatory — without it Room cannot persist a [CryptoString]
+ * field and the build fails (by design; see [CryptoString]).
  */
 class CryptoStringTypeConverter {
 
     @TypeConverter
-    fun encrypt(_cryptoString: CryptoString?): String {
-        var cryptoString = _cryptoString
-        if (cryptoString == null) {
-            cryptoString = CryptoString()
-        }
-        return cryptoString.encrypt(CryptoRoomDatabase.getEncryptor())
-    }
+    fun fromCryptoString(crypto: CryptoString): String =
+        crypto.encrypt(CryptoRoomDatabase.getEncryptor())
 
     @TypeConverter
-    fun decrypt(encryptedValue: String?): CryptoString {
-        return if (encryptedValue == null) {
-            CryptoString()
-        } else CryptoString(encryptedValue, CryptoRoomDatabase.getDecryptor())
-    }
+    fun toCryptoString(encrypted: String): CryptoString =
+        encrypted.decryptToCryptoString(CryptoRoomDatabase.getDecryptor())
 }
