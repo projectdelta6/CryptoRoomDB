@@ -110,7 +110,8 @@ publishing {
             }
             groupId = "com.github.projectdelta6"
             artifactId = project.name
-            version = libs.versions.room.get()
+            // <room>.<roomLibRevision>, e.g. 2.8.4.1 — see gradle/libs.versions.toml.
+            version = "${libs.versions.room.get()}.${libs.versions.roomLibRevision.get()}"
         }
     }
 }

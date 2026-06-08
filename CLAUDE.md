@@ -69,6 +69,10 @@ data class UserEntity(
 
 ## Version Management
 
-- Library version matches Room version (see `libs.versions.toml`)
-- JitPack publishing configured in `CryptoRoomDB/build.gradle.kts`
-- Test app versionName also uses Room version for consistency
+- Library version is `<room>.<roomLibRevision>` — the targeted Room version plus an independent
+  library-release revision (e.g. `2.8.4.1`). Both are in `libs.versions.toml`. Bump
+  `roomLibRevision` for library-only releases; reset it to `1` when `room` is bumped. (A 4th
+  numeric segment is used, not a `-N` suffix, so versions sort *after* the bare Room version.)
+- JitPack publishing configured in `CryptoRoomDB/build.gradle.kts`; a release is a git tag matching
+  the version (e.g. `2.8.4.1`).
+- Test app versionName uses the same `<room>.<roomLibRevision>` string for consistency.
