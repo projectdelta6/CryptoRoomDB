@@ -31,20 +31,10 @@ abstract class CryptoRoomDatabase : RoomDatabase() {
         private var encryptor: Encryptor? = null
         private var decryptor: Decryptor? = null
 
-        @Throws(EncryptorNotInitializedException::class)
-        fun getEncryptor(): Encryptor {
-            if (encryptor == null) {
-                throw EncryptorNotInitializedException()
-            }
-            return encryptor as Encryptor
-        }
+        internal fun getEncryptor(): Encryptor =
+            encryptor ?: throw EncryptorNotInitializedException()
 
-        @Throws(DecryptorNotInitializedException::class)
-        fun getDecryptor(): Decryptor {
-            if (decryptor == null) {
-                throw DecryptorNotInitializedException()
-            }
-            return decryptor as Decryptor
-        }
+        internal fun getDecryptor(): Decryptor =
+            decryptor ?: throw DecryptorNotInitializedException()
     }
 }

@@ -1,7 +1,7 @@
 # CryptoRoomDB: Value Class Redesign
 
 **Purpose:** Simplify CryptoString from a wrapper class to a value class while maintaining type safety and Room compatibility.
-**Status:** Proposal — **reviewed & spiked 2026-06-08; technically viable on Room 2.8.4 (see §0)**
+**Status:** **Implemented 2026-06-08** — value class with a private backing property (§0.7); 100% coverage retained, testapp needed no changes.
 **Impact:** Breaking change for direct `CryptoString` construction; TypeConverter *usage* unchanged, but the converter's internals and the library's own test suite need rework.
 
 ---
@@ -635,3 +635,4 @@ class CryptoStringTypeConverterTest {
 | 2026-06-08 | Reviewed against current codebase (tests, Kover gate, CI, AGP 9 / Room 2.8.4). Added §0: critical Room native value-class-unwrap risk (could bypass the converter and store plaintext), TypeConverter name-mangling caveat, test-suite migration scope, and minor staleness fixes. Recommend a round-trip spike before proceeding. |
 | 2026-06-08 | Ran the §0.1/§0.2 spike (throwaway value class + converter + @Database in test sources). Result: Room 2.8.4 invokes the @TypeConverter and stores ciphertext (no plaintext leak); non-null value-class converter signature compiled fine (no mangling issue). Redesign marked technically viable. Exposed a new fail-silent caveat: omitting the converter would store plaintext rather than erroring. |
 | 2026-06-08 | Spiked the fail-silent caveat (§0.7, four variants). Solved: a `private` backing property makes Room decline native unwrapping, so a missing converter is a compile error — while keeping zero-overhead + a String API. Recommended shape is now `value class CryptoString(private val raw: String) { val value get() = raw }`. This removes the last objection to the redesign. |
+| 2026-06-08 | **Implemented.** `CryptoString` is now a value class with a private backing property + `EMPTY`; utilities moved to `CryptoStringExtensions.kt`; converter rewritten non-null (`fromCryptoString`/`toCryptoString`); `getEncryptor`/`getDecryptor` made `internal`. Library unit suite rewritten (value-class basics + extensions + converter); round-trip and not-initialized tests unchanged. 100% coverage retained, 95% gate green; testapp required no changes (uses only `CryptoString("…")` + `.value`). |
