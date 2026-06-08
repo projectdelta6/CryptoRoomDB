@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.room) apply false
+    alias(libs.plugins.kover) apply false
 }
 
 // Ensure all projects have access to the repositories
