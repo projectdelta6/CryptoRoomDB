@@ -1,13 +1,15 @@
+import com.android.build.api.dsl.ApplicationExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlinKSP)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.room)
 }
 
-android {
+configure<ApplicationExtension> {
     namespace = "com.duck.cryptoroomdbtestapp"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
@@ -39,10 +41,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        jvmToolchain(17)
-    }
-
     buildFeatures {
         buildConfig = true
         compose = true
@@ -65,6 +63,12 @@ android {
     sourceSets {
         // Adds exported schema location as test app assets.
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 

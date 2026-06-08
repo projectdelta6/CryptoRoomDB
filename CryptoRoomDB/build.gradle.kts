@@ -1,6 +1,8 @@
+import com.android.build.api.dsl.LibraryExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlinKSP)
     alias(libs.plugins.kotlin.parcelize)
     `maven-publish`
@@ -8,7 +10,7 @@ plugins {
 
 group = "com.github.projectdelta6"
 
-android {
+configure<LibraryExtension> {
     namespace = "com.duck.cryptoroomdb"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
@@ -38,9 +40,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
 
-    kotlin {
-        jvmToolchain(11)
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
     }
 }
 

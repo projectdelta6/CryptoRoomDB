@@ -1,20 +1,20 @@
 [versions]
-compileSdk = "36"
-targetSdk = "36"
+compileSdk = "37"
+targetSdk = "37"
 baseRepoMinSdk = "21"
 # Gradle and Kotlin
-agp = "8.13.2"
-kotlin = "2.3.0"
-ksp = "2.3.0"
+agp = "9.2.1"
+kotlin = "2.4.0"
+ksp = "2.3.9"
 
 # Libraries
 room = "2.8.4"
-compose-bom = "2025.12.01"
-core-ktx = "1.17.0"
+compose-bom = "2026.05.01"
+core-ktx = "1.19.0"
 lifecycle-runtime-ktx = "2.10.0"
-activity-compose = "1.12.2"
-flexiLoggerVersion = "1.36.4"
-prefshelperVersion = "1.6.0"
+activity-compose = "1.13.0"
+flexiLoggerVersion = "2.1.3"
+prefshelperVersion = "1.7.1"
 
 # Testing
 junit = "4.13.2"
@@ -52,8 +52,8 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
 
-#FlexiLogger
-flexiLogger = { group = "com.github.projectdelta6", name = "FlexiLogger", version.ref = "flexiLoggerVersion" }
+#FlexiLogger (Maven Central)
+flexiLogger = { group = "io.github.projectdelta6", name = "flexilogger", version.ref = "flexiLoggerVersion" }
 
 #PrefsHelper
 prefsHelper = { group = "com.github.projectdelta6", name = "PrefsHelperBase", version.ref = "prefshelperVersion" }
@@ -61,7 +61,6 @@ prefsHelper = { group = "com.github.projectdelta6", name = "PrefsHelperBase", ve
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinKSP = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
