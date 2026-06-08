@@ -80,9 +80,46 @@ simplicity**. Net: a sound, optional refactor. If/when it's picked up, the work 
 
 1. Land the value class + extension functions + (non-null) converter.
 2. Migrate the unit suite (§0.3) and keep the 95% Kover gate green.
-3. Add a permanent ciphertext round-trip assertion and a README warning to defend against
-   the fail-silent missing-converter regression (§0.1 caveat).
+3. Defend against the fail-silent missing-converter regression — ideally by **not using a
+   value class at all** (§0.7), or failing that a ciphertext round-trip assertion + README
+   warning.
 4. Decide the nullable-vs-empty semantics deliberately (§0.5).
+
+### 0.7 Making "forgot the converter" fail loudly
+
+The fail-silent footgun (§0.1 caveat) is caused specifically by the `@JvmInline value class`
+wrapping `String`: Room auto-unwraps it to a TEXT column, so a missing converter stores
+plaintext with no error. Options, best first:
+
+1. **Don't use a value class — use a plain immutable class.** The redesign's two real goals
+   (simpler API, KMP-readiness) come from dropping the `CharSequence` / `IntStream` /
+   mutable-`value` / multi-constructor cruft — **not** from the `value class` keyword. A plain
+   class delivers both, and Room *cannot* persist it natively, so a missing converter is a
+   **compile error** ("cannot figure out how to save this field") — exactly like today. Cost:
+   one small allocation per field, negligible beside the disk I/O + AES already happening. For
+   a security library, guaranteeing you can't silently store plaintext is worth that. This is
+   the recommended trade.
+   ```kotlin
+   class CryptoString(val value: String) {
+       override fun toString() = value
+       override fun equals(other: Any?) = other is CryptoString && other.value == value
+       override fun hashCode() = value.hashCode()
+       companion object { val EMPTY = CryptoString("") }
+   }
+   ```
+2. **Value class + custom Lint rule** shipped with the library: error when an `@Entity` has a
+   `CryptoString` field whose `@Database` doesn't register `CryptoStringTypeConverter`. Keeps
+   zero-overhead and restores build-time fail-loud — but real implementation effort, and lint
+   is finicky for cross-class Room config.
+3. **Mandatory consumer round-trip test** asserting the raw column is ciphertext — cheap, but
+   runtime, and relies on consumer discipline.
+4. **Value class wrapping a non-Room-persistable underlying type** to force a converter —
+   defeats the "it's just a String" ergonomics; not recommended.
+
+Net: zero-allocation isn't a meaningful requirement for an encrypted DB field, so the
+plain-class option (1) dissolves the footgun for free while keeping most of the redesign's
+value. Reserve the value class for if a profiler ever says these allocations matter — and then
+pair it with the Lint rule (2).
 
 ---
 
