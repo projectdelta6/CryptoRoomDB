@@ -133,6 +133,27 @@ Options now superseded by the above:
 This removes the only real objection to the redesign: we get value-class simplicity **and**
 zero-overhead **and** the compile-time guarantee that you can't silently persist plaintext.
 
+#### Regression guard — attempted, deferred (2026-06-08)
+
+The invariant ("expose the backing property → Room auto-unwraps → silent plaintext") is
+currently guarded only by the KDoc on [CryptoString] explaining why `raw` is private. A true
+negative-compilation test (assert "CryptoString `@Entity` without the converter fails to
+compile") was attempted via `kotlin-compile-testing` (kctfork) but **deferred**: kctfork 0.7.1
+bundles Kotlin/KSP **2.1.10**, which crashes running Room **2.8.4**'s processor under this
+project's Kotlin 2.4 / KSP 2.3.9 (KSP2 mode NPEs in the KSP engine; KSP1 mode crashes the
+bundled FIR compiler). Revisit when kctfork ships a Kotlin-2.4 / KSP-2.3.x-compatible release.
+The behaviour itself is proven by the §0.7 spike matrix; only the *automated regression guard*
+is outstanding.
+
+#### Incidental finding: the base class `@TypeConverters` is decorative
+
+Spiked separately: a `@Database` extending `CryptoRoomDatabase` does **not** inherit the
+`@TypeConverters(CryptoStringTypeConverter::class)` declared on the base class — Room reads it
+from the annotated `@Database` element, not its supertypes. So consumers must register the
+converter on their own `@Database` (which is what makes the fail-loud guard meaningful), and the
+annotation on `CryptoRoomDatabase` itself does nothing. Candidate for a small follow-up cleanup
+(remove it, or document it as illustrative only).
+
 ---
 
 ## 1. Background
