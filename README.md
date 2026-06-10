@@ -136,6 +136,22 @@ A sample app is included in the `testapp/` module. It demonstrates:
 - Displaying both decrypted and encrypted values
 - Real-time updates using Compose and Flow
 
+## R8 / ProGuard
+
+CryptoRoomDB ships its own consumer rules in the AAR, so the keeps for
+`CryptoStringTypeConverter`, `CryptoString`, and `CryptoRoomDatabase` apply
+automatically — you don't need to add anything for the encryption layer.
+
+You **still** need the standard Room keeps in your app for your own
+`@Entity`/`@Database`/DAO/`_Impl` classes — CryptoRoomDB's rules don't replace them,
+and it can't ship them because it doesn't know your classes. (Modern Room/AGP supply
+most of these via Room's own consumer rules, but your `AutoMigrationSpec` implementors
+and any app-side `@TypeConverter`s remain your responsibility.)
+
+> **Gotcha:** encryption here is **TypeConverter-based, not reflection-based** —
+> entity field-name obfuscation is governed entirely by your Room rules, so there's no
+> extra obfuscation hazard from the encryption layer.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.

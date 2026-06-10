@@ -25,6 +25,11 @@ configure<LibraryExtension> {
         minSdk = libs.versions.baseRepoMinSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Ships in the AAR so consuming apps inherit the keeps for CryptoRoomDB's
+        // R8-sensitive surface (TypeConverter, CryptoString, CryptoRoomDatabase).
+        // The library itself stays unminified; these rules are for consumers only.
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {

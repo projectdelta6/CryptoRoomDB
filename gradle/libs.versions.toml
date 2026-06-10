@@ -11,7 +11,7 @@ ksp = "2.3.9"
 room = "2.8.4"
 # Independent library-release revision appended to the Room version (e.g. 2.8.4.1).
 # Bump for library-only releases; reset to 1 when `room` is bumped.
-roomLibRevision = "1"
+roomLibRevision = "2"
 compose-bom = "2026.05.01"
 core-ktx = "1.19.0"
 lifecycle-runtime-ktx = "2.10.0"
