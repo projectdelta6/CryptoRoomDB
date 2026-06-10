@@ -28,11 +28,19 @@ configure<ApplicationExtension> {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Minified so CryptoRoomDB's consumer rules actually get exercised through
+            // R8 (full mode is the AGP default). Run an insert/read round-trip on a
+            // release build to validate the keeps are sufficient.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Demo app only — sign release with the debug key so the R8 build is
+            // directly installable/runnable without managing a keystore. Do NOT copy
+            // this into a real publishable app.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
